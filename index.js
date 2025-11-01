@@ -27,10 +27,13 @@ con.on('open', () => {
 const authRouter = require('./routes/auth.routes');
 const itemRoutes = require("./routes/item.routes");
 const commentRoutes = require("./routes/comment.routes");
+const uploadRoutes = require("./routes/upload.routes");
+
 
 app.use('/auth', authRouter);
 app.use("/items", itemRoutes);
 app.use("/items", commentRoutes); 
+app.use("/upload", uploadRoutes); 
 
 app.listen(9000, () => {
     console.log('Server started at Port 9000!');
