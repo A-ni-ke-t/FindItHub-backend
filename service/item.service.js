@@ -1,5 +1,6 @@
 const Item = require("../models/items");
 const Comment = require("../models/comments");
+const { sendResponse, sendError } = require("../utils/response");
 
 // Create new item
 exports.createItem = async (req, res) => {
@@ -12,9 +13,9 @@ exports.createItem = async (req, res) => {
       createdBy: req.user.userId,
     });
     const savedItem = await item.save();
-    res.status(201).json(savedItem);
+    return sendResponse(res, 201, "Item created successfully", savedItem);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendError(res, 500, "Server error", err.message);
   }
 };
 
@@ -23,10 +24,11 @@ exports.listItems = async (req, res) => {
   try {
     const filter = {};
     if (req.query.returned) filter.returned = req.query.returned === "true";
+
     const items = await Item.find(filter).populate("createdBy", "fullName emailAddress");
-    res.status(200).json(items);
+    return sendResponse(res, 200, "Items fetched successfully", items);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendError(res, 500, "Server error", err.message);
   }
 };
 
@@ -36,9 +38,9 @@ exports.editItem = async (req, res) => {
     const updates = req.body;
     Object.assign(req.item, updates, { updatedAt: new Date() });
     const updatedItem = await req.item.save();
-    res.status(200).json(updatedItem);
+    return sendResponse(res, 200, "Item updated successfully", updatedItem);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendError(res, 500, "Server error", err.message);
   }
 };
 
@@ -46,9 +48,9 @@ exports.editItem = async (req, res) => {
 exports.markReturned = async (req, res) => {
   try {
     req.item.returned = true;
-    await req.item.save();
-    res.status(200).json({ message: "Item marked as returned" });
+    const updatedItem = await req.item.save();
+    return sendResponse(res, 200, "Item marked as returned", updatedItem);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendError(res, 500, "Server error", err.message);
   }
 };

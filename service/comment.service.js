@@ -1,12 +1,13 @@
 const Comment = require("../models/comments");
 const Item = require("../models/items");
+const { sendResponse, sendError } = require("../utils/response");
 
 // Add comment
 exports.addComment = async (req, res) => {
   try {
     const item = await Item.findById(req.params.itemId);
-    if (!item) return res.status(404).json({ message: "Item not found" });
-    if (item.returned) return res.status(400).json({ message: "Cannot comment on returned item" });
+    if (!item) return sendError(res, 404, "Item not found");
+    if (item.returned) return sendError(res, 400, "Cannot comment on returned item");
 
     const comment = new Comment({
       itemId: item._id,
@@ -15,18 +16,21 @@ exports.addComment = async (req, res) => {
     });
 
     const savedComment = await comment.save();
-    res.status(201).json(savedComment);
+    return sendResponse(res, 201, "Comment added successfully", savedComment);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendError(res, 500, "Server error", err.message);
   }
 };
 
 // List comments
 exports.listComments = async (req, res) => {
   try {
-    const comments = await Comment.find({ itemId: req.params.itemId }).populate("userId", "fullName emailAddress");
-    res.status(200).json(comments);
+    const comments = await Comment.find({ itemId: req.params.itemId }).populate(
+      "userId",
+      "fullName emailAddress"
+    );
+    return sendResponse(res, 200, "Comments fetched successfully", comments);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendError(res, 500, "Server error", err.message);
   }
 };
