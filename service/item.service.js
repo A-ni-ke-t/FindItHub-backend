@@ -23,14 +23,31 @@ exports.createItem = async (req, res) => {
 exports.listItems = async (req, res) => {
   try {
     const filter = {};
-    if (req.query.returned) filter.returned = req.query.returned === "true";
 
-    const items = await Item.find(filter).populate("createdBy", "fullName emailAddress");
+    // Filter by returned status (optional)
+    if (req.query.returned) {
+      filter.returned = req.query.returned === "true";
+    }
+
+    // Search by description (and optionally title)
+    if (req.query.search) {
+      const searchRegex = new RegExp(req.query.search, "i"); // 'i' = case-insensitive
+      filter.$or = [
+        { description: searchRegex },
+        { title: searchRegex } // optional: include title in search
+      ];
+    }
+
+    const items = await Item.find(filter)
+      .populate("createdBy", "fullName emailAddress")
+      .sort({ createdAt: -1 });
+
     return sendResponse(res, 200, "Items fetched successfully", items);
   } catch (err) {
     return sendError(res, 500, "Server error", err.message);
   }
 };
+
 
 // Edit item
 exports.editItem = async (req, res) => {
