@@ -1,21 +1,24 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const url = 'mongodb://localhost/credenceDB';
+require('dotenv').config(); // load .env variables
+
+const url = process.env.MONGO_URI ;
 
 const app = express();
 
+// Connect to MongoDB
 mongoose.connect(url)
 const con = mongoose.connection;
 
 con.on('open', () => {
-    console.log('connected...');
-})
+    console.log('Connected to MongoDB...');
+});
 
 app.use(express.json());
 
-const dataRouter = require('../FindItHub-backend/routes/data.routes');
-app.use('/data',dataRouter);
+const authRouter = require('../FindItHub-backend/routes/auth.routes');
+app.use('/auth', authRouter);
 
-app.listen(9000, ()=> {
-    console.log('Server Started at Port 9000!');
-})
+app.listen(9000, () => {
+    console.log('Server started at Port 9000!');
+});
