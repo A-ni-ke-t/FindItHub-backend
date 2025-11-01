@@ -11,7 +11,7 @@ const app = express();
 // Enable CORS BEFORE defining routes
 app.use(cors({
     origin: "http://localhost:3000", // React app
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true
 }));
 
