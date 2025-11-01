@@ -8,17 +8,20 @@ class AuthService {
 
   async register(req, res) {
     const { fullName, emailAddress, password } = req.body;
-
+  
     try {
       const existing = await User.findOne({ emailAddress });
       if (existing) {
-        return res.status(400).json({ message: "Email already exists" });
+        return res.status(400).json({
+          status: 400,           // <-- add this
+          message: "Email already exists",
+        });
       }
-
+  
       const hashedPassword = await bcrypt.hash(password, 10);
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpExpires = Date.now() + 10 * 60 * 1000; // 10 min expiry
-
+  
       const newUserData = {
         fullName,
         emailAddress,
@@ -26,7 +29,7 @@ class AuthService {
         otp,
         otpExpires,
       };
-
+  
       try {
         await sendMail(
           emailAddress,
@@ -34,21 +37,28 @@ class AuthService {
           `<p>Your verification code is <b>${otp}</b>. It expires in 10 minutes.</p>`
         );
       } catch (mailErr) {
-        return res
-          .status(500)
-          .json({ message: "Email failed. Registration aborted." });
+        return res.status(500).json({
+          status: 500,          // <-- add this
+          message: "Email failed. Registration aborted.",
+        });
       }
+  
       const user = new User(newUserData);
       await user.save();
-
-      return res
-        .status(200)
-        .json({ message: "OTP sent to email for verification" });
+  
+      return res.status(200).json({
+        status: 200,             // <-- add this
+        message: "OTP sent to email for verification",
+      });
     } catch (err) {
       console.error(err);
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({
+        status: 500,             // <-- add this
+        message: err.message,
+      });
     }
   }
+  
 
   async verifyOtp(req, res) {
     const { emailAddress, otp } = req.body;
