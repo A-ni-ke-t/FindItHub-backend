@@ -9,11 +9,25 @@ const url = process.env.MONGO_URI;
 const app = express();
 
 // Enable CORS BEFORE defining routes
-app.use(cors({
-    origin: "http://localhost:3000" || "https://find-it-hub.vercel.app", // React app
+const allowedOrigins = [
+    "http://localhost:3000",
+    "https://find-it-hub.vercel.app"
+  ];
+  
+  app.use(cors({
+    origin: function(origin, callback) {
+      // allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true
-}));
+  }));
+  
 
 app.use(express.json());
 
