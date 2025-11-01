@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config(); // load .env variables
+const path = require("path");
 
 const url = process.env.MONGO_URI;
 
@@ -22,6 +23,8 @@ const con = mongoose.connection;
 con.on('open', () => {
     console.log('Connected to MongoDB...');
 });
+
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Routes
 const authRouter = require('./routes/auth.routes');
