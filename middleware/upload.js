@@ -1,54 +1,42 @@
-const { handleError } = require("../utils/response");
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
+const { handleError } = require('../utils/response');
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+// Configure Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
     let folder = 'items';
     switch (req.query.type) {
       case 'items':
         folder = 'items';
         break;
       // Add more cases if needed
+      default:
+        folder = 'others';
     }
-    const fullPath = path.join(path.resolve(), `/public/uploads/${folder}/`);
-    checkIfDirectoryExists(fullPath);
-    cb(null, fullPath);
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
+    return {
+      folder: `uploads/${folder}`,
+      format: file.mimetype.split('/')[1], // jpg, png, pdf, etc.
+      public_id: `${Date.now()}_${file.originalname}`,
+    };
   },
 });
 
 const uploader = multer({
   storage,
-
-  fileFilter: function (req, file, callback) {
-    const ext = path.extname(file.originalname);
-    if (
-      ext !== '.png' &&
-      ext !== '.jpg' &&
-      ext !== '.jpeg' &&
-      ext !== '.pdf' &&
-      ext !== '.PNG' &&
-      ext !== '.JPG' &&
-      ext !== '.JPEG' &&
-      ext !== '.PDF'
-    ) {
-      return callback(new Error('Invalid mime type'));
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = ['.png', '.jpg', '.jpeg', '.pdf', '.PNG', '.JPG', '.JPEG', '.PDF'];
+    const ext = '.' + file.originalname.split('.').pop();
+    if (!allowedTypes.includes(ext)) {
+      return cb(new Error('Invalid file type'));
     }
-    callback(null, true);
+    cb(null, true);
   },
 }).any();
 
-function checkIfDirectoryExists(directoryPath) {
-  if (!fs.existsSync(directoryPath)) {
-    fs.mkdirSync(directoryPath, { recursive: true });
-  }
-}
-
- const uploaderMiddleware = (req, res, next) => {
+const uploaderMiddleware = (req, res, next) => {
   uploader(req, res, function (err) {
     if (err) {
       return handleError({ res, statusCode: 400, error: err.message });
@@ -58,4 +46,3 @@ function checkIfDirectoryExists(directoryPath) {
 };
 
 module.exports = { uploaderMiddleware };
-
