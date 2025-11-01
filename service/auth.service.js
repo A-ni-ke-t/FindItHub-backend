@@ -80,6 +80,7 @@ class AuthService {
       return sendResponse(res, 200, "Login successful", {
         token,
         user: {
+          userId: user._id,
           fullName: user.fullName,
           emailAddress: user.emailAddress
         }
