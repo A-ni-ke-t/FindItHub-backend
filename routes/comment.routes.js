@@ -4,6 +4,6 @@ const auth = require("../middleware/auth");
 const commentController = require("../service/comment.service");
 
 router.post("/:itemId/comments", auth, commentController.addComment);
-router.get("/:itemId/comments", commentController.listComments);
+router.get("/:itemId/comments", auth, commentController.listComments);
 
 module.exports = router;

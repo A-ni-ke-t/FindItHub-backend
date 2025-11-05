@@ -5,7 +5,7 @@ const checkOwner = require("../middleware/ownership.middleware");
 const itemController = require("../service/item.service");
 
 router.post("/", auth, itemController.createItem);
-router.get("/", itemController.listItems);
+router.get("/", auth, itemController.listItems);
 router.patch("/:itemId", auth, checkOwner, itemController.editItem);
 router.patch("/:itemId/return", auth, checkOwner, itemController.markReturned);
 

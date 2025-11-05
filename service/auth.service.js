@@ -6,10 +6,13 @@ const { sendResponse, sendError } = require("../utils/response");
 
 class AuthService {
 
+  // REGISTER
   async register(req, res) {
-    const { fullName, emailAddress, password } = req.body;
+    let { fullName, emailAddress, password } = req.body;
 
     try {
+      emailAddress = emailAddress.toLowerCase();
+
       const existing = await User.findOne({ emailAddress });
       if (existing) return sendError(res, 400, "Email already exists");
 
@@ -43,10 +46,13 @@ class AuthService {
     }
   }
 
+  // VERIFY OTP
   async verifyOtp(req, res) {
-    const { emailAddress, otp } = req.body;
+    let { emailAddress, otp } = req.body;
 
     try {
+      emailAddress = emailAddress.toLowerCase();
+
       const user = await User.findOne({ emailAddress });
       if (!user) return sendError(res, 404, "User not found");
       if (user.isVerified) return sendError(res, 400, "User already verified");
@@ -64,10 +70,13 @@ class AuthService {
     }
   }
 
+  // LOGIN
   async login(req, res) {
-    const { emailAddress, password } = req.body;
+    let { emailAddress, password } = req.body;
 
     try {
+      emailAddress = emailAddress.toLowerCase();
+
       const user = await User.findOne({ emailAddress });
       if (!user) return sendError(res, 404, "User not found");
       if (!user.isVerified) return sendError(res, 403, "Please verify your email first");
@@ -82,17 +91,20 @@ class AuthService {
         user: {
           userId: user._id,
           fullName: user.fullName,
-          emailAddress: user.emailAddress
-        }
+          emailAddress: user.emailAddress,
+        },
       });
     } catch (err) {
       return sendError(res, 500, err.message);
     }
   }
 
+  // FORGOT PASSWORD
   async forgotPassword(req, res) {
-    const { emailAddress } = req.body;
+    let { emailAddress } = req.body;
     try {
+      emailAddress = emailAddress.toLowerCase();
+
       const user = await User.findOne({ emailAddress });
       if (!user) return sendError(res, 404, "No user found with that email");
 
@@ -116,10 +128,13 @@ class AuthService {
     }
   }
 
+  // RESET PASSWORD
   async resetPassword(req, res) {
-    const { emailAddress, otp, newPassword, confirmPassword } = req.body;
+    let { emailAddress, otp, newPassword, confirmPassword } = req.body;
 
     try {
+      emailAddress = emailAddress.toLowerCase();
+
       const user = await User.findOne({ emailAddress });
       if (!user) return sendError(res, 404, "User not found");
       if (user.resetOtp !== otp) return sendError(res, 400, "Invalid OTP");
@@ -137,6 +152,7 @@ class AuthService {
     }
   }
 
+  // CHANGE PASSWORD (AUTH REQUIRED)
   async changePassword(req, res) {
     const userId = req.user.userId;
     const { oldPassword, newPassword, confirmPassword } = req.body;
