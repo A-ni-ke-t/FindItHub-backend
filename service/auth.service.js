@@ -5,7 +5,6 @@ const { generateToken } = require("../utils/jwt");
 const { sendResponse, sendError } = require("../utils/response");
 
 class AuthService {
-
   // REGISTER
   async register(req, res) {
     let { fullName, emailAddress, password } = req.body;
@@ -57,14 +56,27 @@ class AuthService {
       if (!user) return sendError(res, 404, "User not found");
       if (user.isVerified) return sendError(res, 400, "User already verified");
       if (user.otp !== otp) return sendError(res, 400, "Invalid OTP");
-      if (Date.now() > user.otpExpires) return sendError(res, 400, "OTP expired");
+      if (Date.now() > user.otpExpires)
+        return sendError(res, 400, "OTP expired");
 
+      // Mark verified and clear OTP fields
       user.isVerified = true;
       user.otp = undefined;
       user.otpExpires = undefined;
       await user.save();
 
-      return sendResponse(res, 200, "Email verified successfully");
+      // Generate login token (same as in login)
+      const token = generateToken({ userId: user._id });
+
+      // Return success with token + user data (same structure as login)
+      return sendResponse(res, 200, "Email verified successfully", {
+        token,
+        user: {
+          userId: user._id,
+          fullName: user.fullName,
+          emailAddress: user.emailAddress,
+        },
+      });
     } catch (err) {
       return sendError(res, 500, err.message);
     }
@@ -79,7 +91,8 @@ class AuthService {
 
       const user = await User.findOne({ emailAddress });
       if (!user) return sendError(res, 404, "User not found");
-      if (!user.isVerified) return sendError(res, 403, "Please verify your email first");
+      if (!user.isVerified)
+        return sendError(res, 403, "Please verify your email first");
 
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) return sendError(res, 400, "Invalid credentials");
@@ -130,7 +143,7 @@ class AuthService {
 
   // RESET PASSWORD
   async resetPassword(req, res) {
-    let { emailAddress, otp, newPassword, confirmPassword } = req.body;
+    let { emailAddress, otp, newPassword } = req.body;
 
     try {
       emailAddress = emailAddress.toLowerCase();
@@ -138,8 +151,8 @@ class AuthService {
       const user = await User.findOne({ emailAddress });
       if (!user) return sendError(res, 404, "User not found");
       if (user.resetOtp !== otp) return sendError(res, 400, "Invalid OTP");
-      if (Date.now() > user.resetOtpExpires) return sendError(res, 400, "OTP expired");
-      if (newPassword !== confirmPassword) return sendError(res, 400, "Passwords do not match");
+      if (Date.now() > user.resetOtpExpires)
+        return sendError(res, 400, "OTP expired");
 
       user.password = await bcrypt.hash(newPassword, 10);
       user.resetOtp = undefined;
@@ -163,7 +176,8 @@ class AuthService {
 
       const valid = await bcrypt.compare(oldPassword, user.password);
       if (!valid) return sendError(res, 400, "Old password is incorrect");
-      if (newPassword !== confirmPassword) return sendError(res, 400, "Passwords do not match");
+      if (newPassword !== confirmPassword)
+        return sendError(res, 400, "Passwords do not match");
 
       user.password = await bcrypt.hash(newPassword, 10);
       await user.save();
@@ -173,6 +187,37 @@ class AuthService {
       return sendError(res, 500, err.message);
     }
   }
+
+  // UPDATE PROFILE
+  // UPDATE PROFILE (AUTH REQUIRED)
+async updateProfile(req, res) {
+  const userId = req.user.userId; // userId is extracted from token (middleware)
+  const { fullName } = req.body;
+
+  try {
+    if (!fullName || fullName.trim() === "") {
+      return sendError(res, 400, "Full name is required");
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return sendError(res, 404, "User not found");
+
+    user.fullName = fullName.trim();
+    await user.save();
+
+    return sendResponse(res, 200, "Profile updated successfully", {
+      user: {
+        userId: user._id,
+        fullName: user.fullName,
+        emailAddress: user.emailAddress,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return sendError(res, 500, err.message);
+  }
+}
+
 }
 
 module.exports = { AuthService };
