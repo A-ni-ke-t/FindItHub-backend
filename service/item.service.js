@@ -33,7 +33,7 @@ exports.listItems = async (req, res) => {
     if (req.query.search) {
       const searchRegex = new RegExp(req.query.search, "i"); // 'i' = case-insensitive
       filter.$or = [
-        { description: searchRegex },
+        { location: searchRegex },
         { title: searchRegex } // optional: include title in search
       ];
     }
