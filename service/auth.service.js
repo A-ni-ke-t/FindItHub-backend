@@ -141,6 +141,40 @@ class AuthService {
     }
   }
 
+  // RESEND OTP
+async resendOtp(req, res) {
+  let { emailAddress } = req.body;
+
+  try {
+    emailAddress = emailAddress.toLowerCase();
+
+    const user = await User.findOne({ emailAddress });
+    if (!user) return sendError(res, 404, "User not found");
+    if (user.isVerified) return sendError(res, 400, "User already verified");
+
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    await user.save();
+
+    // Send OTP email
+    await sendMail(
+      emailAddress,
+      "FindItHub - Verify Your Email (Resent OTP)",
+      `<p>Your new verification code is <b>${otp}</b>. It expires in 10 minutes.</p>`
+    );
+
+    return sendResponse(res, 200, "OTP resent to your email");
+  } catch (err) {
+    console.error(err);
+    return sendError(res, 500, err.message);
+  }
+}
+
+
   // RESET PASSWORD
   async resetPassword(req, res) {
     let { emailAddress, otp, newPassword } = req.body;

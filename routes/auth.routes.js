@@ -11,6 +11,8 @@ router.post("/forgot-password", (req, res) => service.forgotPassword(req, res));
 router.post("/reset-password", (req, res) => service.resetPassword(req, res));
 router.post("/change-password", auth, (req, res) => service.changePassword(req, res));
 router.patch("/update-profile", auth, (req, res) => service.updateProfile(req, res));
+router.post("/resend-otp", (req, res) => service.resendOtp(req, res));
+
 
 
 module.exports = router;
